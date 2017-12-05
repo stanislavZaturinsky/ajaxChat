@@ -1,7 +1,7 @@
 About Project
 -------------------
 This is a simple chat which work with ajax. User can write nickname and start push messages
-to chat.
+to chat. File install.md contains information how to install project 
 
 
 <p align="center">
