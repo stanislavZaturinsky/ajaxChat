@@ -113,3 +113,11 @@ a.desc:after {
 .nav > li > form > button.logout:focus {
     outline: none;
 }
+
+p {
+    word-wrap: break-word;
+}
+
+.custom-margin-top {
+    margin-top: 33px;
+}

@@ -1,3 +1,9 @@
+About Project
+-------------------
+This is a simple chat which work with ajax. User can write nickname and start push messages
+to chat.
+
+
 <p align="center">
     <a href="https://github.com/yiisoft" target="_blank">
         <img src="https://avatars0.githubusercontent.com/u/993323" height="100px">

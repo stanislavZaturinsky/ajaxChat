@@ -2,13 +2,14 @@
 
 namespace app\controllers;
 
+use app\models\Messages;
+use app\models\Users;
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\Response;
 use yii\filters\VerbFilter;
-use app\models\LoginForm;
-use app\models\ContactForm;
+use yii\widgets\ActiveForm;
 
 class SiteController extends Controller
 {
@@ -55,72 +56,79 @@ class SiteController extends Controller
     }
 
     /**
-     * Displays homepage.
+     * Displays chat page.
      *
-     * @return string
+     * @return string|array
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $modelUsers    = new Users;
+        $modelMessages = new Messages;
+
+        if (Yii::$app->request->isAjax)
+        {
+            if (Yii::$app->request->post('Users', 0)) {
+                $model = $modelUsers;
+            } else {
+                $model = $modelMessages;
+            }
+
+            $model->load(Yii::$app->request->post());
+            Yii::$app->response->format = Response::FORMAT_JSON;
+            return ActiveForm::validate($model);
+        } else {
+            return $this->render('index', [
+                'modelUsers'    => $modelUsers,
+                'modelMessages' => $modelMessages,
+                'users'         => Users::find()->all(),
+                'messages'      => Messages::find()->orderBy('date ASC')->all()
+            ]);
+        }
     }
 
     /**
-     * Login action.
+     * Creating user
      *
-     * @return Response|string
+     * @return null|void
      */
-    public function actionLogin()
+    public function actionCreateUser()
     {
-        if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
+        if (!Yii::$app->request->isAjax) {
+            return;
         }
 
-        $model = new LoginForm();
-        if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
+        $model = new Users;
+        if (Yii::$app->request->isPost && $model->load(Yii::$app->request->post())) {
+            if ($model->isUserExist()) {
+                $userId = $model->getExistUserId();
+            } else {
+                $model->setUserInfo();
+                $model->save(false);
+                $userId = $model->id_user;
+            }
+            Yii::$app->response->format          = Response::FORMAT_JSON;
+            Yii::$app->response->data['user_id'] = $userId;
         }
-        return $this->render('login', [
-            'model' => $model,
-        ]);
+        return null;
     }
 
     /**
-     * Logout action.
+     * Creating message
      *
-     * @return Response
+     * @return null|void
      */
-    public function actionLogout()
+    public function actionCreateMessage()
     {
-        Yii::$app->user->logout();
-
-        return $this->goHome();
-    }
-
-    /**
-     * Displays contact page.
-     *
-     * @return Response|string
-     */
-    public function actionContact()
-    {
-        $model = new ContactForm();
-        if ($model->load(Yii::$app->request->post()) && $model->contact(Yii::$app->params['adminEmail'])) {
-            Yii::$app->session->setFlash('contactFormSubmitted');
-
-            return $this->refresh();
+        if (!Yii::$app->request->isAjax) {
+            return;
         }
-        return $this->render('contact', [
-            'model' => $model,
-        ]);
-    }
 
-    /**
-     * Displays about page.
-     *
-     * @return string
-     */
-    public function actionAbout()
-    {
-        return $this->render('about');
+        $model = new Messages;
+        if (Yii::$app->request->isPost && $model->load(Yii::$app->request->post()) && $model->save(false)) {
+            $data[] = Messages::findOne(['id_message' => $model->id_message]);
+            Yii::$app->response->format = Response::FORMAT_HTML;
+            Yii::$app->response->data   = $this->renderPartial('_messages', ['data' => $data]);
+        }
+        return null;
     }
 }
